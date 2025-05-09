@@ -2,9 +2,11 @@
 mod abstraction;
 mod click;
 mod error;
-mod py;
 mod slide;
 mod w;
+
+#[cfg(feature = "pyo3")]
+mod py;
 
 #[cfg(test)]
 mod tests {
