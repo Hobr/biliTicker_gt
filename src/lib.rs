@@ -43,16 +43,22 @@ mod tests {
             println!("{}", i);
             let start = Instant::now();
             let (gt, challenge) = click
-                .register_test("https://passport.bilibili.com/x/passport-login/captcha?source=main_web")
+                .register_test(
+                    "https://passport.bilibili.com/x/passport-login/captcha?source=main_web",
+                )
                 .unwrap();
-            let validate = click.simple_match_retry(gt.as_str(), challenge.as_str()).unwrap();
+            let validate = click
+                .simple_match_retry(gt.as_str(), challenge.as_str())
+                .unwrap();
             println!("{}", validate);
             let end = Instant::now() - start;
             println!("{:?}", end);
         }
-        println!("avage: {}s", (Instant::now() - sstart).as_secs_f64()/ 100f64);
+        println!(
+            "avage: {}s",
+            (Instant::now() - sstart).as_secs_f64() / 100f64
+        );
     }
-
 
     #[test]
     fn test_bug() {

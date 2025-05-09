@@ -1,16 +1,15 @@
-use std::collections::HashSet;
-use rand::{random, thread_rng, Rng};
-use rsa::{BigUint, RsaPublicKey, Pkcs1v15Encrypt};
-use rand::rngs::OsRng;
-use serde_json::{json};
-use soft_aes::aes::aes_enc_cbc;
 use md5;
+use rand::rngs::OsRng;
+use rand::{Rng, random, thread_rng};
+use rsa::{BigUint, Pkcs1v15Encrypt, RsaPublicKey};
+use serde_json::json;
+use soft_aes::aes::aes_enc_cbc;
+use std::collections::HashSet;
 
 const RSA_N: &str = "00C1E3934D1614465B33053E7F48EE4EC87B14B95EF88947713D25EECBFF7E74C7977D02DC1D9451F79DD5D1C10C29ACB6A9B4D6FB7D0A0279B6719E1772565F09AF627715919221AEF91899CAE08C0D686D748B20A3603BE2318CA6BC2B59706592A9219D0BF05C9F65023A21D2330807252AE0066D59CEEFA5F2748EA80BAB81";
 const RSA_E: &str = "010001";
 const AES_KEY: &str = "1234567890123456";
 const AES_IV: [u8; 16] = [48u8; 16];
-
 
 const BASE64_TABLE: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789()";
 const MASK1: i32 = 7274496;
@@ -101,11 +100,12 @@ fn rsa_encrypt(data: &str) -> String {
 }
 
 fn aes_encrypt(data: &str) -> Vec<u8> {
-    let encrypted = aes_enc_cbc(data.as_bytes(), AES_KEY.as_bytes(), &AES_IV, Some("PKCS7")).unwrap();
+    let encrypted =
+        aes_enc_cbc(data.as_bytes(), AES_KEY.as_bytes(), &AES_IV, Some("PKCS7")).unwrap();
     encrypted
 }
 
-fn encrypt(json_str: &str) -> String{
+fn encrypt(json_str: &str) -> String {
     let u = rsa_encrypt(AES_KEY);
     let h = aes_encrypt(json_str);
     let p = base64(h.as_ref());
@@ -114,7 +114,12 @@ fn encrypt(json_str: &str) -> String{
 
 pub(crate) fn click_calculate(key: &str, gt: &str, challenge: &str) -> String {
     let pass_time = (random::<f32>() * 700f32 + 1300f32) as usize;
-    let m5 = md5::compute(format!("{}{}{}", gt, &challenge[..challenge.len()-2].to_string(), pass_time));
+    let m5 = md5::compute(format!(
+        "{}{}{}",
+        gt,
+        &challenge[..challenge.len() - 2].to_string(),
+        pass_time
+    ));
     let rp = hex::encode(m5.to_vec());
 
     let dic = json!({
@@ -293,12 +298,21 @@ fn track_encrypt(track: &Vec<Vec<i32>>) -> String {
     // 特殊模式编码
     fn encode_pair(t: &[i32]) -> Option<char> {
         let pairs = [
-            [1, 0], [2, 0], [1, -1], [1, 1], [0, 1],
-            [0, -1], [3, 0], [2, -1], [2, 1]
+            [1, 0],
+            [2, 0],
+            [1, -1],
+            [1, 1],
+            [0, 1],
+            [0, -1],
+            [3, 0],
+            [2, -1],
+            [2, 1],
         ];
         let chars = "stuvwxyz~";
 
-        pairs.iter().enumerate()
+        pairs
+            .iter()
+            .enumerate()
             .find(|(_, pair)| t[0] == pair[0] && t[1] == pair[1])
             .map(|(i, _)| chars.chars().nth(i).unwrap())
     }
@@ -348,7 +362,8 @@ fn final_encrypt(t: String, e: &[u8], n: String) -> String {
         let u = char::from(c);
 
         // 基于原始长度计算插入位置
-        let ll = (s as u64 * c as u64 * c as u64 + a as u64 * c as u64 + m as u64) % original_len as u64;
+        let ll =
+            (s as u64 * c as u64 * c as u64 + a as u64 * c as u64 + m as u64) % original_len as u64;
         let ll = ll as usize;
 
         o.insert(ll, u);
@@ -378,8 +393,8 @@ fn user_response(key: i32, challenge: &str) -> String {
 
     // 初始化数据结构
     let mut underscores = vec![vec![]; 5]; // 五元组数组
-    let mut char_set = HashSet::new();     // 字符去重集合
-    let mut idx = 0;                       // 轮询下标
+    let mut char_set = HashSet::new(); // 字符去重集合
+    let mut idx = 0; // 轮询下标
 
     // 处理主字符串（去掉最后两个字符）
     let processed_e: String = chars_e[..chars_e.len() - 2].iter().collect();
@@ -411,7 +426,10 @@ fn user_response(key: i32, challenge: &str) -> String {
                 result.push(char);
                 f -= weights[d];
             } else {
-                panic!("五元组数组 {} 号位置无可用字符，请确保输入字符串包含足够多的唯一字符", d);
+                panic!(
+                    "五元组数组 {} 号位置无可用字符，请确保输入字符串包含足够多的唯一字符",
+                    d
+                );
             }
         } else {
             // 移除当前权重并下移指针
@@ -428,7 +446,6 @@ fn user_response(key: i32, challenge: &str) -> String {
     result
 }
 
-
 pub fn slide_calculate(key: i32, gt: &str, challenge: &str, c: &[u8], s: &str) -> String {
     let track = get_slide_track(key);
     let pass_time = track.last().unwrap()[2];
@@ -439,7 +456,12 @@ pub fn slide_calculate(key: i32, gt: &str, challenge: &str, c: &[u8], s: &str) -
 
     let user_response = user_response(key, challenge);
 
-    let m5 = md5::compute(format!("{}{}{}", gt, &challenge[..challenge.len() - 2], pass_time));
+    let m5 = md5::compute(format!(
+        "{}{}{}",
+        gt,
+        &challenge[..challenge.len() - 2],
+        pass_time
+    ));
     let rp = hex::encode(m5.to_vec());
 
     let dic = json!({

@@ -1,13 +1,13 @@
 use crate::abstraction::{Api, GenerateW, Test, VerifyType};
 use crate::error::{
-    missing_param, net_work_error, other, other_without_source, parse_error, Result,
+    Result, missing_param, net_work_error, other, other_without_source, parse_error,
 };
+use crate::w::slide_calculate;
+use captcha_breaker::captcha::Slide0;
 use image::{DynamicImage, GenericImage};
 use reqwest::blocking::Client;
 use serde_json::Value;
 use std::collections::HashMap;
-use captcha_breaker::captcha::Slide0;
-use crate::w::slide_calculate;
 
 pub struct Slide {
     client: Client,
@@ -196,7 +196,13 @@ impl GenerateW for Slide {
         c: &[u8],
         s: &str,
     ) -> Result<String> {
-        Ok(slide_calculate(key.parse().map_err(|e| other("滑动距离不是整数类型", e))?, gt, challenge, c, s))
+        Ok(slide_calculate(
+            key.parse().map_err(|e| other("滑动距离不是整数类型", e))?,
+            gt,
+            challenge,
+            c,
+            s,
+        ))
     }
 }
 

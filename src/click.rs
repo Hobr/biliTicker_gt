@@ -1,15 +1,15 @@
 use crate::abstraction::{Api, GenerateW, Test, VerifyType};
 use crate::error::{
-    missing_param, net_work_error, other, other_without_source, parse_error, Result,
+    Result, missing_param, net_work_error, other, other_without_source, parse_error,
 };
 
+use crate::w::click_calculate;
+use captcha_breaker::captcha::ChineseClick0;
 use reqwest::blocking::Client;
 use serde_json::Value;
-use std::collections::{HashMap};
+use std::collections::HashMap;
 use std::thread::sleep;
 use std::time::{Duration, Instant};
-use captcha_breaker::captcha::ChineseClick0;
-use crate::w::click_calculate;
 
 pub struct Click {
     client: Client,
@@ -118,12 +118,7 @@ impl Api for Click {
         ))
     }
 
-    fn verify(
-        &self,
-        gt: &str,
-        challenge: &str,
-        w: Option<&str>,
-    ) -> Result<(String, String)> {
+    fn verify(&self, gt: &str, challenge: &str, w: Option<&str>) -> Result<(String, String)> {
         let url = "http://api.geevisit.com/ajax.php";
         let mut params = HashMap::from([
             ("gt", gt),
@@ -217,7 +212,10 @@ impl GenerateW for Click {
         let pic_img = self.download_img(pic_url.as_str())?;
         let pic_img = image::load_from_memory(&pic_img).map_err(|e| other("图片加载失败", e))?;
 
-        let cb_res = self.cb.run(&pic_img).map_err(|e| other_without_source("cb模块内部错误"))?;
+        let cb_res = self
+            .cb
+            .run(&pic_img)
+            .map_err(|e| other_without_source("cb模块内部错误"))?;
         let mut res = vec![];
         for (x, y) in &cb_res {
             let position = format!(
@@ -272,13 +270,7 @@ impl Click {
         let (c, s, args) = self.get_new_c_s_args(gt, challenge)?;
         let start = Instant::now();
         let key = self.calculate_key(args)?;
-        let w = self.generate_w(
-            key.as_str(),
-            gt,
-            challenge,
-            c.as_ref(),
-            s.as_str(),
-        )?;
+        let w = self.generate_w(key.as_str(), gt, challenge, c.as_ref(), s.as_str())?;
 
         let elapsed = start.elapsed();
 
@@ -320,13 +312,7 @@ impl Click {
     ) -> Result<String> {
         let start = Instant::now();
         let key = self.calculate_key(args)?;
-        let w = self.generate_w(
-            key.as_str(),
-            gt,
-            challenge,
-            c.as_ref(),
-            s,
-        )?;
+        let w = self.generate_w(key.as_str(), gt, challenge, c.as_ref(), s)?;
         let elapsed = start.elapsed();
         if elapsed < Duration::from_secs(2) {
             let sleep_duration = Duration::from_secs(2) - elapsed;

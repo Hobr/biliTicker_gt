@@ -1,5 +1,5 @@
 use crate::error::{
-    missing_param, net_work_error, other, other_without_source, parse_error, Result,
+    Result, missing_param, net_work_error, other, other_without_source, parse_error,
 };
 use reqwest::blocking::Client;
 use serde_json::Value;
@@ -148,14 +148,8 @@ pub(crate) trait GenerateW: Api {
     /// - 不同验证类型的关键参数不同
     fn calculate_key(&mut self, args: Self::ArgsType) -> Result<String>;
     /// ### 根据关键参数生成w
-    fn generate_w(
-        &self,
-        key: &str,
-        gt: &str,
-        challenge: &str,
-        c: &[u8],
-        s: &str,
-    ) -> Result<String>;
+    fn generate_w(&self, key: &str, gt: &str, challenge: &str, c: &[u8], s: &str)
+    -> Result<String>;
 }
 
 pub(crate) trait Test: Api + GenerateW {
